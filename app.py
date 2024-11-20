@@ -20,30 +20,38 @@ def html_parse_fn(html_str: str):
 #   </a>
     stack = []
     result = []
+    
     for i, c in enumerate(html_str):
         if c == ">":
             cur_ind = i
-            while stack[-1] != "<":
+            while stack and stack[-1] != "<":
                 stack.pop()
-                cur_ind = cur_ind - 1
-            cur_ind = cur_ind - 1
-            stack.append(html_str[cur_ind : i+1])
-            #结尾tag
-            if html_str[cur_ind+1] == "/":
-                begin_tag = '<\\' + stack[-1][2:]
-                if stack[-1] == "<\p>":
+                cur_ind -= 1
+            stack.pop()
+            cur_ind -= 1
+            
+            tag = html_str[cur_ind : i+1]
+            
+            # 处理结束标签
+            if tag.startswith("</"):  # 结束标签
+                begin_tag = '<' + tag[2:]  # 开始标签
+                if begin_tag == "<p>":  # 只处理 <p> 标签
                     true_text = ''
-                    while stack[-1] != begin_tag:
-                        true_text += stack.pop()
-                    
-                    result.append(true_text)
+                    while stack and stack[-1] != begin_tag:
+                        true_text = stack.pop() + true_text  # 反向拼接
+                    if stack and stack[-1] == begin_tag:
+                        stack.pop()  # 弹出开始标签
+                    result.append(true_text.strip())  # 添加到结果中
                 else:
-                    while stack[-1] != begin_tag:
-                        stack.pop()
+                    while stack and stack[-1] != begin_tag:
+                        stack.pop()  # 弹出直到找到对应的开始标签
+                    stack.pop()
+            else:
+                stack.append(tag)
         else:
             stack.append(c)
-        
-    return true_text
+
+    return result  # 返回结果列表
 
 
 def main() -> None:
